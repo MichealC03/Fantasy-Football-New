@@ -1,0 +1,8 @@
+/* Custom styles for highlighting rows and columns */
+.highlight-row {
+    background-color: #dff0d8; /* Light green */
+}
+
+.highlight-col {
+    background-color: #d9edf7; /* Light blue */
+}

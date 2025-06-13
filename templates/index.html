@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataTables Example</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+    <style>
+        body {
+            padding: 20px;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.5em 1em;
+        }
+
+        .highlight-col-null {
+            background-color: #ffffff;
+            color: #ffffff; /* white */
+        }
+
+        .highlight-col-positive1 {
+            background-color: #d6f5d6;
+        }
+
+        .highlight-col-positive2 {
+            background-color: #8bfc9c;
+        }
+
+        .highlight-col-positive3 {
+            background-color: #3abd4e;
+        }
+        .highlight-col-positive4 {
+            background-color: #e699ff;
+        }
+
+        .highlight-col-negative1 {
+            background-color: #ffe0cc;
+        }
+
+        .highlight-col-negative2 {
+            background-color: #ffc299;
+        }
+
+        .highlight-col-negative3 {
+            background-color: #ffa366;
+        }
+        .highlight-col-negative4 {
+            background-color: #ff4d4d;
+        }
+
+        .highlight-col-clear {
+            background-color: #1C00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+
+                <h2>ESPN</h2>
+                <div class="table-responsive" id="table1-container">
+                    {{ table1 | safe }}
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h2>By Position</h2>
+                <div class="btn-group" role="group" aria-label="Data Selection">
+                    <button type="button" class="btn btn-primary" onclick="updateTable('qbs')">QBs</button>
+                    <button type="button" class="btn btn-primary" onclick="updateTable('rbs')">RBs</button>
+                    <button type="button" class="btn btn-primary" onclick="updateTable('wrs')">WRs</button>
+                    <button type="button" class="btn btn-primary" onclick="updateTable('tes')">TEs</button>
+                </div>
+    
+                <div class="table-responsive" id="table2-container">
+                    {{ table2 | safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+        
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            initializeDataTables();
+        });
+
+        function initializeDataTables() {
+            // Destroy any existing DataTable instance
+            if ($.fn.DataTable.isDataTable('#table1-container table')) {
+                $('#table1-container table').DataTable().destroy();
+            }
+
+            // Initialize DataTable
+            let table = $('#table1-container table').DataTable({
+                paging: false,
+                searching: true,
+                ordering: true,
+                lengthChange: false,
+                scrollY: '400px',
+                scrollCollapse: true,
+                order: [[2, 'asc']]
+            });
+
+            // Apply cell highlighting
+            highlightCells('#table1-container', 3, 4);
+        }
+
+        function highlightCells(tableName, startCol, endCol) {
+            $(tableName + ' table tbody tr').each(function() {
+                let $row = $(this);
+                let valueToCompare = parseFloat($row.find('td:eq(2)').text().trim());
+
+                $row.find('td').each(function(index) {
+                    $(this).removeClass('highlight-col-null highlight-col-positive1 highlight-col-positive2 highlight-col-positive3 highlight-col-positive4 highlight-col-negative1 highlight-col-negative2 highlight-col-negative3 highlight-col-negative4 highlight-col-clear');
+                    
+                    let cellValue = parseFloat($(this).text().trim());
+                    let pickDifference = valueToCompare - cellValue;
+
+                    if (index >= startCol && index <= endCol) {
+                        
+                        if (cellValue == 1000 || cellValue == 0) {
+                            $(this).addClass('highlight-col-null');
+                        } else if (pickDifference < 5 && pickDifference > 0) {
+                            $(this).addClass('highlight-col-positive1');
+                        } else if (pickDifference >= 5 && pickDifference < 10) {
+                            $(this).addClass('highlight-col-positive2');
+                        } else if (pickDifference >= 10 && pickDifference < 20) {
+                            $(this).addClass('highlight-col-positive3');
+                        } else if (pickDifference >= 20) {
+                            $(this).addClass('highlight-col-positive4');
+                        } else if (pickDifference < 0 && pickDifference > -5) {
+                            $(this).addClass('highlight-col-negative1');
+                        } else if (pickDifference >= -10 && pickDifference <= -5) {
+                            $(this).addClass('highlight-col-negative2');
+                        } else if (pickDifference >= -20 && pickDifference < -10) {
+                            $(this).addClass('highlight-col-negative3');
+                        } else if (pickDifference <= -20) {
+                            $(this).addClass('highlight-col-negative4');
+                        } else {
+                            $(this).addClass('highlight-col-clear');
+                        }
+                    } else if (index !== 0) {
+                        if (cellValue == 1000 || cellValue == 0) {
+                            $(this).addClass('highlight-col-null');
+                        }
+                    }
+                });
+            });
+        }
+
+        function updateTable(tableName) {
+            $.ajax({
+                url: `/update_table/${tableName}`,
+                method: 'GET',
+                success: function(response) {
+                    $('#table2-container').html(response.table_html);
+
+                    setTimeout(function() {
+                        let updatedTable = $('#table2-container table').DataTable({
+                            paging: false,
+                            searching: true,
+                            ordering: true,
+                            lengthChange: false,
+                            scrollY: '400px',
+                            scrollCollapse: true,
+                            order: [[2, 'asc']]
+                        });
+
+                        highlightCells('#table2-container', 3, 7);
+                    }, 100);
+                },
+                error: function() {
+                    console.error('Failed to update the table.');
+                }
+            });
+        }
+
+    </script>
+</body>
+</html>
