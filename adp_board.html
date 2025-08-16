@@ -1,0 +1,85 @@
+import pandas as pd
+from flask import Flask, render_template_string
+import webbrowser
+import threading
+import time
+
+# Initialize Flask app
+app = Flask(__name__)
+
+# Sample ADP data (mimicking scraped data structure)
+data = {
+    'Player': ['Christian McCaffrey', 'CeeDee Lamb', 'Patrick Mahomes', 'Breece Hall'],
+    'Position': ['RB', 'WR', 'QB', 'RB'],
+    'ADP': [1.2, 3.5, 8.7, 2.3],
+    'Team': ['SF', 'DAL', 'KC', 'NYJ']
+}
+
+# Create and sort Pandas DataFrame
+adp_df = pd.DataFrame(data).sort_values(by='ADP')
+
+# HTML template with embedded table
+html_template = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantasy Football ADP Board</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .adp-table {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .adp-table th, .adp-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        .adp-table th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .adp-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .adp-table tr:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fantasy Football ADP Board</h1>
+    {{ table | safe }}
+</body>
+</html>
+"""
+
+# Route to display the ADP board
+@app.route('/')
+def display_adp_board():
+    table_html = adp_df.to_html(index=False, classes='adp-table')
+    return render_template_string(html_template, table=table_html)
+
+# Function to open the browser
+def open_browser():
+    time.sleep(1)  # Wait for Flask server to start
+    webbrowser.open('http://127.0.0.1:5000')
+
+if __name__ == '__main__':
+    # Start Flask server in a separate thread
+    threading.Thread(target=open_browser).start()
+    app.run(debug=False, use_reloader=False)

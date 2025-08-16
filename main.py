@@ -1,11 +1,11 @@
 from flask import Flask, render_template, jsonify
 import pandas as pd
-from espn import df
-from bigPlays import bigPlaysDf
-from espnPosRk import merged_qbs_df
-from espnPosRk import merged_rbs_df
-from espnPosRk import merged_wrs_df
-from espnPosRk import merged_tes_df
+# from espn import df
+# from bigPlays import bigPlaysDf
+# from espnPosRk import merged_qbs_df
+# from espnPosRk import merged_rbs_df
+# from espnPosRk import merged_wrs_df
+# from espnPosRk import merged_tes_df
 
 app = Flask(__name__)
 
@@ -23,8 +23,8 @@ def update_table(table_name):
         table_html = merged_rbs_df.to_html(classes='table table-striped table-bordered', index=False)
     elif table_name == 'wrs':
         table_html = merged_wrs_df.to_html(classes='table table-striped table-bordered', index=False)
-    elif table_name == 'tes':
-        table_html = merged_tes_df.to_html(classes='table table-striped table-bordered', index=False)
+    # elif table_name == 'tes':
+    #     table_html = merged_tes_df.to_html(classes='table table-striped table-bordered', index=False)
     else:
         table_html = bigPlaysDf.to_html(classes='table table-striped table-bordered', index=False)
 

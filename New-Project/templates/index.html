@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantasy Football ADP Board</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .controls {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .filter-group {
+            margin-bottom: 15px;
+        }
+        .filter-group label {
+            display: inline-block;
+            width: 120px;
+            font-weight: bold;
+        }
+        .filter-group select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            background-color: white;
+        }
+        .adp-table {
+            width: 100%;
+            max-width: none;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: white;
+            table-layout: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .adp-table th, .adp-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        .adp-table th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .remove-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .remove-btn:hover {
+            background-color: #da190b;
+        }
+        .reset-btn {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .reset-btn:hover {
+            background-color: #0b7dda;
+        }
+        .adp-table tbody tr.pos-QB td:nth-child(3) {
+            background-color: #90caf9;  /* medium blue */
+        }
+
+        .adp-table tbody tr.pos-RB td:nth-child(3) {
+            background-color: #a5d6a7;  /* medium green */
+        }
+
+        .adp-table tbody tr.pos-WR td:nth-child(3) {
+            background-color: #fff176;  /* medium yellow */
+        }
+
+        .adp-table tbody tr.pos-TE td:nth-child(3) {
+            background-color: #f3a0bb;  /* medium pink */
+        }
+    </style>
+</head>
+<body>
+    <h1>Fantasy Football ADP Board</h1>
+    
+    <div class="controls">
+        <div class="filter-group">
+            <label for="position-filter">Filter by Position:</label>
+            <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+            <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+            <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+            <select id="position-filter" onchange="filterTable()">
+                <option value="">Select Position</option>
+                <option value="All">All Positions</option>
+                <option value="QB">QB</option>
+                <option value="RB">RB</option>
+                <option value="WR">WR</option>
+                <option value="TE">TE</option>
+            </select>
+            <button class="reset-btn" onclick="resetData()">Reset All Data</button>
+        </div>
+    </div>
+    
+    <div id="table-container">
+        {{ table | safe }}
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#adpTable').DataTable({
+                paging: false,        // no pagination
+                scrollY: '600px',     // vertical scroll height
+                scrollCollapse: true,
+                fixedHeader: true,
+                order: [[3, 'asc']], // Sort by 3rd column (index 3) ascending
+                createdRow: function(row, data, dataIndex) {
+                    let adpFP = parseFloat(data[3]);
+                    let adpSleeper = parseFloat(data[4]);
+                    let adpESPN = parseFloat(data[5]);
+                    let posRankFP = parseFloat(data[8]);    // FP_POSRANK col
+                    let posRankSleeper = parseFloat(data[7]); // Sleeper_POSRANK col
+                    let posRankESPN = parseFloat(data[6]); // ESPN_POSRANK col
+                    let ffaRank = parseFloat(data[9]);     // FFA_Rank col
+
+                    // Reset background color
+                    $('td', row).css('background-color', '');
+
+                    // Hide FFA_Rank if 0 or 1000
+                    if (ffaRank === 0 || ffaRank === 1000) {
+                        $('td:eq(9)', row).css('color', 'white');
+                    }
+
+                    // ADP comparisons
+                    if (!isNaN(adpSleeper) && !isNaN(adpFP)) {
+                        let diffSleeper = adpSleeper - adpFP;
+                        if (diffSleeper >= 5) {
+                            $('td:eq(4)', row).css('background-color', '#ff9999');
+                        } else if (diffSleeper <= -5) {
+                            $('td:eq(4)', row).css('background-color', '#d4edda');
+                        } else {
+                            $('td:eq(4)', row).css('background-color', '#fff3cd');
+                        }
+                    }
+
+                    if (!isNaN(adpESPN) && !isNaN(adpFP)) {
+                        let diffESPN = adpESPN - adpFP;
+                        if (diffESPN >= 5) {
+                            $('td:eq(5)', row).css('background-color', '#ff9999');
+                        } else if (diffESPN <= -5) {
+                            $('td:eq(5)', row).css('background-color', '#d4edda');
+                        } else {
+                            $('td:eq(5)', row).css('background-color', '#fff3cd');
+                        }
+                    }
+
+                    // PosRank comparisons
+                    if (!isNaN(posRankSleeper) && !isNaN(posRankFP)) {
+                        let diffPosSleeper = posRankSleeper - posRankFP;
+                        if (diffPosSleeper >= 5) {
+                            $('td:eq(7)', row).css('background-color', '#ff9999');
+                        } else if (diffPosSleeper <= -5) {
+                            $('td:eq(7)', row).css('background-color', '#d4edda');
+                        } else {
+                            $('td:eq(7)', row).css('background-color', '#fff3cd');
+                        }
+                    }
+
+                    if (!isNaN(posRankESPN) && !isNaN(posRankFP)) {
+                        let diffPosESPN = posRankESPN - posRankFP;
+                        if (diffPosESPN >= 5) {
+                            $('td:eq(6)', row).css('background-color', '#ff9999');
+                        } else if (diffPosESPN <= -5) {
+                            $('td:eq(6)', row).css('background-color', '#d4edda');
+                        } else {
+                            $('td:eq(6)', row).css('background-color', '#fff3cd');
+                        }
+                    }
+                },
+                initComplete: function() {
+                    // Apply position classes after DataTable is fully initialized
+                    $('#adpTable tbody tr').each(function() {
+                        var position = $(this).find('td:eq(2)').text().trim();
+                        $(this).removeClass('pos-QB pos-RB pos-WR pos-TE');
+                        $(this).addClass('pos-' + position);
+                        console.log('Applied class pos-' + position + ' to row');
+                    });
+                }
+            });
+        });
+
+        $(document).on('click', '.remove-btn', function() {
+            const playerName = $(this).data('player');
+            removePlayer(playerName, this);
+        });
+
+
+        function removePlayer(playerName, buttonElem) {
+            fetch('/remove_player', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ player: playerName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Get DataTable instance
+                    const table = $('#adpTable').DataTable();
+
+                    // Find the row containing this button and remove it
+                    table
+                    .row($(buttonElem).parents('tr'))
+                    .remove()
+                    .draw(false);  // redraw without resetting paging
+
+                } else {
+                    alert('Error removing player');
+                }
+            });
+}
+
+        function filterTable() {
+            const position = document.getElementById('position-filter').value;
+            const url = position ? `/?position=${position}` : '/';
+            window.location.href = url;
+        }
+
+        function resetData() {
+            fetch('/reset_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error resetting data');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

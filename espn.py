@@ -14,7 +14,7 @@ from draftSharks import draftSharksDf
 def getRowsESPN(cookies, headers, params, start):
 
   response = requests.get(
-      'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2024/segments/0/leaguedefaults/3',
+      'https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2025/segments/0/leaguedefaults/3',
       params=params,
       cookies=cookies,
       headers=headers,
